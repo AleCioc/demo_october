@@ -1,0 +1,5 @@
+streamlit
+watchdog
+contextily
+geopandas
+plotly
