@@ -1,11 +1,14 @@
 import streamlit as st
 import pandas as pd
 
+from utils import add_logo
+
+
 st.set_page_config(
     layout="wide"
 )
 
-st.sidebar.image("SWITCH - Logo.png", use_column_width=True)
+add_logo()
 
 st.header("Benvenut*!")
 

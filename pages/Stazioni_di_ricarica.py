@@ -1,46 +1,34 @@
 import os
-import re
 import json
 import streamlit as st
 import pandas as pd
 import contextily as ctx
 import matplotlib.pyplot as plt
 
+from utils import *
+
+
 st.set_page_config(layout="wide")
 
-st.sidebar.image("SWITCH - Logo.png", use_column_width=True)
+add_logo()
 
 st.header("Stazioni di ricarica")
 
-
-def atoi(text):
-    return int(text) if text.isdigit() else text
-
-
-def natural_keys(text):
-    '''
-    alist.sort(key=natural_keys) sorts in human order
-    http://nedbatchelder.com/blog/200712/human_sorting.html
-    (See Toothy's implementation in the comments)
-    '''
-    return [atoi(c) for c in re.split(r'(\d+)', text)]
-
-
-sim_ids = os.listdir("results/Roma/single_run/enjoy_fleet_test")
+chosen_sim_scenario = st.selectbox("Seleziona scenario:", ["fleet_dim_fuel"])
+sim_ids = [f for f in os.listdir("results/Roma/single_run/{}".format(chosen_sim_scenario)) if f != ".DS_Store"]
 sim_ids.sort(key=natural_keys)
+chosen_sim_id = st.selectbox("Seleziona simulation_id:", sim_ids)
 
-chosen_simulation = st.selectbox("Seleziona scenario:", sim_ids)
-
-with open("results/Roma/single_run/enjoy_fleet_test/{}/n_charging_poles_by_zone.json".format(str(chosen_simulation)), "r") as f:
+with open("results/Roma/single_run/{}/{}/n_charging_poles_by_zone.json".format(
+        str(chosen_sim_scenario), str(chosen_sim_id)
+), "r") as f:
     n_charging_poles_by_zone = json.load(f)
 
 grid = pd.read_pickle(
-    "results/Roma/single_run/enjoy_fleet_test/{}/grid.pickle".format(
-        str(chosen_simulation)
+    "results/Roma/single_run/{}/{}/grid.pickle".format(
+        str(chosen_sim_scenario), str(chosen_sim_id)
     )
 )
-
-#st.write(grid.columns)
 
 charging_zones = [int(z) for z in n_charging_poles_by_zone.keys()]
 charging_poles_by_zone = {int(z): n_charging_poles_by_zone[z] for z in n_charging_poles_by_zone.keys()}
@@ -52,7 +40,8 @@ mean_lat = grid.centroid.geometry.apply(lambda p: p.y).mean()
 
 import plotly.express as px
 
-#grid_json = grid[["geometry"]].to_json()
+# grid_json = grid[["geometry"]].to_json()
+
 st.write(grid.crs)
 
 st_cols = st.columns((1, 1))
