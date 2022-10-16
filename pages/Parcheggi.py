@@ -1,16 +1,10 @@
-from matplotlib.backends.backend_agg import RendererAgg
-_lock = RendererAgg.lock
-
 import os
-import re
-import streamlit as st
 import pandas as pd
-import contextily as ctx
-import matplotlib.pyplot as plt
-
 import plotly.express as px
-
 from utils import *
+
+import warnings
+warnings.simplefilter("ignore")
 
 st.set_page_config(layout="wide")
 
@@ -19,9 +13,20 @@ add_logo()
 st.header("Analisi parcheggi")
 
 chosen_sim_scenario = st.selectbox("Seleziona scenario:", ["fleet_dim_fuel", "fleet_dim_ev"])
+
 sim_ids = [f for f in os.listdir("results/Roma/single_run/{}".format(chosen_sim_scenario)) if f != ".DS_Store"]
 sim_ids.sort(key=natural_keys)
-chosen_sim_id = st.selectbox("Seleziona simulation_id:", sim_ids)
+
+sim_stats_df = pd.DataFrame()
+for sim_id in sim_ids:
+    sim_stats = pd.read_csv("results/Roma/single_run/{}/{}/sim_stats.csv".format(chosen_sim_scenario, sim_id), index_col=0)
+    sim_stats.loc["sim_id"] = sim_id
+    sim_stats_df = pd.concat([sim_stats_df, sim_stats.T], ignore_index=True)
+
+chosen_n_vehicles = st.selectbox("Seleziona numero di veicoli:", sim_stats_df.n_vehicles_sim.unique())
+chosen_sim_id = sim_stats_df.loc[sim_stats_df.n_vehicles_sim == chosen_n_vehicles, "sim_id"].values[0]
+
+#chosen_sim_id = st.selectbox("Seleziona simulation_id:", sim_ids)
 
 grid = pd.read_pickle(
     "results/Roma/single_run/{}/{}/grid.pickle".format(
@@ -40,8 +45,8 @@ zones_history = pd.read_csv(
 
 n_vehicles_parked_by_zone = zones_history[zones_history.vehicles_parked > 0].groupby("zone_id").vehicles_parked.median()
 n_vehicles_parked_by_zone = n_vehicles_parked_by_zone[n_vehicles_parked_by_zone > n_vehicles_parked_by_zone.median()]
-
 grid["parking_index_1"] = n_vehicles_parked_by_zone
+
 n_vehicles_parked_by_zone_max = zones_history.groupby("zone_id").vehicles_parked.max()
 n_vehicles_parked_by_zone_max = n_vehicles_parked_by_zone_max[
     n_vehicles_parked_by_zone_max > n_vehicles_parked_by_zone_max.median()
@@ -127,6 +132,9 @@ grid_xy["y"] = grid.centroid.geometry.apply(lambda p: p.y)
 data = pd.merge(zones_history, grid_xy, on='zone_id')
 data = data[data.zone_id.isin(critical_zones)]
 
+
+# -> The chart below is very cool but heavy
+# -> Check Altair limitations for complex charts
 
 @st.experimental_memo
 def create_altair_chart():

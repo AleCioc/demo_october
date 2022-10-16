@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-
 from utils import add_logo
 
 st.set_page_config(layout="wide")
@@ -23,6 +22,7 @@ with st.expander("Clicca per vedere i risultati completi"):
     st.dataframe(sim_stats_df)
 
 sim_stats_df.n_vehicles_sim = sim_stats_df.n_vehicles_sim.astype(float)
+sim_stats_df["avg_vehicle_utilisation"] = sim_stats_df.tot_mobility_duration / sim_stats_df.n_vehicles_sim / (15*24*60*60)
 
 import altair as alt
 import pandas as pd
@@ -36,6 +36,18 @@ altair_fig = alt.Chart(unsatisfied_by_n_vehicles).mark_bar(width=15).encode(
     x=alt.X('n_vehicles_sim', scale=alt.Scale(domain=[0, 1020])),
     y='percentage_unsatisfied',
     tooltip=["n_vehicles_sim", "percentage_unsatisfied"]
+).interactive()
+st.altair_chart(altair_fig, use_container_width=True)
+
+st.subheader("Utilizzo medio di un veicolo nell'arco della simulazione [%]")
+
+unsatisfied_by_n_vehicles = sim_stats_df[[
+    "n_vehicles_sim", "avg_vehicle_utilisation"
+]]
+altair_fig = alt.Chart(unsatisfied_by_n_vehicles).mark_bar(width=15).encode(
+    x=alt.X('n_vehicles_sim', scale=alt.Scale(domain=[0, 1020])),
+    y='avg_vehicle_utilisation',
+    tooltip=["n_vehicles_sim", "avg_vehicle_utilisation"]
 ).interactive()
 st.altair_chart(altair_fig, use_container_width=True)
 
@@ -94,7 +106,7 @@ costs_by_n_vehicles = sim_stats_df[
     ["cars_cost", "charging_infrastructure_cost", "n_vehicles_sim"]
 ]
 
-st.markdown("#### Investimenti iniziali [€]")
+st.markdown("#### Costi infrastruttura [€]")
 
 costs_by_n_vehicles = pd.melt(
     costs_by_n_vehicles,

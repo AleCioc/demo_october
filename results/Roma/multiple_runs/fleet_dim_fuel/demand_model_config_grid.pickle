@@ -1,6 +1,6 @@
 ,0
 requests_rate_factor,[1]
 vehicle_research_policy,['neighbors_1']
-user_contribution_policy,['simple_willingness']
+user_contribution_policy,['']
 user_contribution,[False]
 willingness,[0]

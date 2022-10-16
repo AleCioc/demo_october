@@ -1,10 +1,6 @@
 import os
 import json
-import streamlit as st
 import pandas as pd
-import contextily as ctx
-import matplotlib.pyplot as plt
-
 from utils import *
 
 
@@ -14,10 +10,33 @@ add_logo()
 
 st.header("Stazioni di ricarica")
 
-chosen_sim_scenario = st.selectbox("Seleziona scenario:", ["fleet_dim_fuel"])
+chosen_sim_scenario = st.selectbox("Seleziona scenario:", ["charging_dim_ev"])
+
 sim_ids = [f for f in os.listdir("results/Roma/single_run/{}".format(chosen_sim_scenario)) if f != ".DS_Store"]
 sim_ids.sort(key=natural_keys)
-chosen_sim_id = st.selectbox("Seleziona simulation_id:", sim_ids)
+
+sim_stats_df = pd.DataFrame()
+for sim_id in sim_ids:
+    sim_stats = pd.read_csv("results/Roma/single_run/{}/{}/sim_stats.csv".format(chosen_sim_scenario, sim_id), index_col=0)
+    sim_stats.loc["sim_id"] = sim_id
+    sim_stats_df = pd.concat([sim_stats_df, sim_stats.T], ignore_index=True)
+
+selected_n_charging_zones = st.selectbox(
+    "Seleziona numero di zone con stazioni di ricarica:", sim_stats_df.n_charging_zones.unique()
+)
+
+selected_tot_n_charging_poles = st.selectbox(
+    "Seleziona numero di colonnine:", sorted(sim_stats_df.tot_n_charging_poles.unique())
+)
+
+
+chosen_sim_id = sim_stats_df.loc[
+    (sim_stats_df.n_charging_zones == selected_n_charging_zones) & (
+            sim_stats_df.tot_n_charging_poles == selected_tot_n_charging_poles
+    ), "sim_id"
+].values[0]
+
+chosen_sim_id
 
 with open("results/Roma/single_run/{}/{}/n_charging_poles_by_zone.json".format(
         str(chosen_sim_scenario), str(chosen_sim_id)
@@ -61,17 +80,3 @@ fig = px.choropleth_mapbox(
 )
 fig.update_layout(title_text='Unsatisfied demand by zone')
 st_cols[1].plotly_chart(fig, use_container_width=True)
-
-
-# fig, ax = plt.subplots(figsize=(10, 10))
-# plt.title("Number of charging poles by zone")
-# grid.to_crs("epsg:3857").plot(ax=ax, column="poles_count", legend=True)
-# ctx.add_basemap(ax)
-# st_cols[0].pyplot(fig)
-#
-# fig, ax = plt.subplots(figsize=(10, 10))
-# plt.title("Unsatisfied demand by zone")
-# grid.to_crs("epsg:3857").plot(ax=ax, column="unsatisfied_demand_origins", legend=True)
-# ctx.add_basemap(ax)
-# st_cols[1].pyplot(fig)
-#
