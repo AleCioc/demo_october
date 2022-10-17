@@ -25,7 +25,7 @@ with st.expander("Clicca per vedere i risultati completi"):
 sim_stats_df.tot_n_charging_poles = sim_stats_df.tot_n_charging_poles.astype(float)
 
 selected_n_charging_zones = st.selectbox(
-    "Seleziona numero di zone con stazioni di ricarica:", sorted(sim_stats_df.n_charging_zones.unique())
+    "Seleziona numero massimo di zone con stazioni di ricarica:", sorted(sim_stats_df.n_charging_zones.unique())
 )
 
 st.subheader("Domanda insoddisfatta [%]")

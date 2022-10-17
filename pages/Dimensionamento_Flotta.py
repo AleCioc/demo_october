@@ -16,13 +16,79 @@ sim_stats_df = pd.read_csv(
     "results/Roma/multiple_runs/{}/sim_stats.csv".format(chosen_simulation),
     index_col=0
 ).rename(columns={"washing_cost": "vehicle_maintainance_cost"})
+sim_stats_df["avg_vehicle_utilisation"] = sim_stats_df.tot_mobility_duration / sim_stats_df.n_vehicles_sim / (15*24*60*60)
 
 st.subheader("Risultati completi")
-with st.expander("Clicca per vedere i risultati completi"):
+with st.expander("Clicca per vedere la tabella dei risultati completi"):
     st.dataframe(sim_stats_df)
 
+best_config_stats = sim_stats_df.loc[sim_stats_df.profit.idxmax()]
+original_fleet_stats = sim_stats_df.loc[sim_stats_df.n_vehicles_sim == 600]
+
+st.subheader("Risultati sintetici")
+
+st.markdown(
+    """
+    
+La migliore configurazione trovata è composta da {} veicoli, mentre la flotta originale ha 600 veicoli.
+
+    """.format(best_config_stats.n_vehicles_sim)
+)
+
+#with st.expander("Clicca per vedere i KPI più importanti"):
+
+st_cols = st.columns((1, 1, 1))
+st_cols[0].metric(
+    "Aumento utilizzo veicoli",
+    "+ {:.2f} %".format((
+        ((best_config_stats.avg_vehicle_utilisation) \
+         - (original_fleet_stats.avg_vehicle_utilisation)) \
+        / (original_fleet_stats.avg_vehicle_utilisation)
+    ).values[0] * 100)
+)
+st_cols[1].metric(
+    "Aumento domanda soddisfatta per veicolo",
+    "+ {:.2f} %".format((
+        (best_config_stats.percentage_satisfied / best_config_stats.n_vehicles_sim)\
+        - (original_fleet_stats.percentage_satisfied / 600)
+    ).values[0] * 100)
+)
+if original_fleet_stats.profit.values[0] < 0:
+    profit_sign = -1
+else:
+    profit_sign = 1
+
+st_cols[2].metric(
+    "Aumento profitto",
+    "+ {:.2f} %".format((
+        ((best_config_stats.profit) \
+         - (original_fleet_stats.profit)) \
+        / (original_fleet_stats.profit * profit_sign)
+    ).values[0] * 100)
+)
+st_cols = st.columns((1, 1, 1))
+st_cols[0].metric(
+    "Riduzione CO2 emessa",
+    "- {:.2f} %".format((
+            (original_fleet_stats.tot_co2_emissions_kg - best_config_stats.tot_co2_emissions_kg)\
+            / original_fleet_stats.tot_co2_emissions_kg
+    ).values[0] * 100)
+)
+
+st_cols[1].metric(
+    "Riduzione costi veicoli",
+    "- {:.2f} %".format((
+            (original_fleet_stats.cars_cost + original_fleet_stats.vehicle_maintainance_cost\
+             - best_config_stats.cars_cost - best_config_stats.vehicle_maintainance_cost)\
+            / (original_fleet_stats.cars_cost + original_fleet_stats.vehicle_maintainance_cost)
+    ).values[0] * 100)
+)
+st_cols[2].metric(
+    "Riduzione veicoli in circolazione",
+    "- {:.2f} %".format(((600 - best_config_stats.n_vehicles_sim) / 600) * 100)
+)
+
 sim_stats_df.n_vehicles_sim = sim_stats_df.n_vehicles_sim.astype(float)
-sim_stats_df["avg_vehicle_utilisation"] = sim_stats_df.tot_mobility_duration / sim_stats_df.n_vehicles_sim / (15*24*60*60)
 
 import altair as alt
 import pandas as pd
@@ -48,6 +114,19 @@ altair_fig = alt.Chart(unsatisfied_by_n_vehicles).mark_bar(width=15).encode(
     x=alt.X('n_vehicles_sim', scale=alt.Scale(domain=[0, 1020])),
     y='avg_vehicle_utilisation',
     tooltip=["n_vehicles_sim", "avg_vehicle_utilisation"]
+).interactive()
+st.altair_chart(altair_fig, use_container_width=True)
+
+st.subheader("Profitto per veicolo [€]")
+
+profit_by_n_vehicles = sim_stats_df[[
+    "n_vehicles_sim", "avg_vehicle_utilisation", "profit"
+]]
+profit_by_n_vehicles.loc[:, "profit_per_vehicle"] = profit_by_n_vehicles.profit / profit_by_n_vehicles.n_vehicles_sim
+altair_fig = alt.Chart(profit_by_n_vehicles).mark_bar(width=15).encode(
+    x=alt.X('n_vehicles_sim', scale=alt.Scale(domain=[0, 1020])),
+    y='profit_per_vehicle',
+    tooltip=["n_vehicles_sim", "profit_per_vehicle"]
 ).interactive()
 st.altair_chart(altair_fig, use_container_width=True)
 
