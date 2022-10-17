@@ -51,6 +51,9 @@ n_vehicles_parked_by_zone_max = zones_history.groupby("zone_id").vehicles_parked
 n_vehicles_parked_by_zone_max = n_vehicles_parked_by_zone_max[
     n_vehicles_parked_by_zone_max > n_vehicles_parked_by_zone_max.median()
 ]
+n_vehicles_parked_by_zone_max = n_vehicles_parked_by_zone_max[
+    n_vehicles_parked_by_zone_max > 10
+]
 grid["parking_index_2"] = n_vehicles_parked_by_zone_max
 
 n_vehicles_parked_by_zone.name = "parking_index_1"
@@ -67,8 +70,6 @@ mean_lat = grid.centroid.geometry.apply(lambda p: p.y).median()
 critical_zones = grid.loc[
     (grid.parking_index_1 > 0) & (grid.parking_index_2 > 0)
 ].sort_values("parking_index_1", ascending=False).zone_id.values
-
-st.write(grid.crs)
 
 st_cols = st.columns((1, 1))
 
@@ -98,69 +99,75 @@ def plotly_chart_2():
 st_cols[0].plotly_chart(plotly_chart_1(), use_container_width=True)
 st_cols[1].plotly_chart(plotly_chart_2(), use_container_width=True)
 
-st.warning("Attenzione! Sono state individuate le seguenti zone critiche:")
-st.warning(" - ".join(list([str(int(z)) for z in critical_zones])))
+if len(critical_zones):
 
-st.subheader("Analisi zone critiche")
+    st.warning("Attenzione! Sono state individuate le seguenti zone critiche:")
+    st.warning(" - ".join(list([str(int(z)) for z in critical_zones])))
 
-with st.expander("Clicca per vedere gli indici di parcheggio delle zone critiche"):
-    st.dataframe(parking_indices_df.loc[critical_zones])
+    st.subheader("Analisi zone critiche")
 
-st_cols = st.columns((1, 3))
+    with st.expander("Clicca per vedere gli indici di parcheggio delle zone critiche"):
+        st.dataframe(parking_indices_df.loc[critical_zones])
 
-selected_zone = st_cols[0].selectbox(
-    "Seleziona la zona per vedere la storia dei parcheggi:", critical_zones
-)
+    st_cols = st.columns((1, 3))
 
-zone_df = zones_history[zones_history.zone_id == selected_zone]
-zone_df.t = pd.to_datetime(zone_df.t)
-
-import altair as alt
-
-fig = alt.Chart(zone_df).properties(height=400).mark_line(point=True, interpolate='step-after').encode(
-    x='t',
-    y=alt.Y('vehicles_parked', scale=alt.Scale(domain=[0, zones_history.vehicles_parked.max()])),
-    tooltip=["t", "vehicles_parked"]
-).interactive()
-st_cols[1].altair_chart(fig, use_container_width=True)
-
-grid_xy = pd.DataFrame(index=grid.index)
-grid_xy["zone_id"] = grid.zone_id
-grid_xy["x"] = grid.centroid.geometry.apply(lambda p: p.x)
-grid_xy["y"] = grid.centroid.geometry.apply(lambda p: p.y)
-
-data = pd.merge(zones_history, grid_xy, on='zone_id')
-data = data[data.zone_id.isin(critical_zones)]
-
-
-# -> The chart below is very cool but heavy
-# -> Check Altair limitations for complex charts
-
-@st.experimental_memo
-def create_altair_chart():
-
-    selector = alt.selection_single(empty='all', fields=['zone_id'])
-
-    base = alt.Chart(data).add_selection(selector)
-
-    points = base.mark_point(filled=True, size=200).encode(
-        x=alt.X('x', scale=alt.Scale(domain=[grid_xy.x.min(), grid_xy.x.max()])),
-        y=alt.Y('y', scale=alt.Scale(domain=[grid_xy.y.min(), grid_xy.y.max()])),
-        color=alt.condition(selector, 'zone_id', alt.value('lightgray'), legend=None),
+    selected_zone = st_cols[0].selectbox(
+        "Seleziona la zona per vedere la storia dei parcheggi:", critical_zones
     )
 
-    timeseries = base.mark_line().properties(width=500).encode(
-        x=alt.Y('t:T'),
-        y=alt.Y('vehicles_parked', scale=alt.Scale(domain=(0, 30))),
-        color=alt.Color('zone_id', legend=None)
-    ).transform_filter(
-        selector
+    zone_df = zones_history[zones_history.zone_id == selected_zone]
+    zone_df.t = pd.to_datetime(zone_df.t)
+
+    import altair as alt
+
+    fig = alt.Chart(zone_df).properties(height=400).mark_line(point=True, interpolate='step-after').encode(
+        x='t',
+        y=alt.Y('vehicles_parked', scale=alt.Scale(domain=[0, zones_history.vehicles_parked.max()])),
+        tooltip=["t", "vehicles_parked"]
     ).interactive()
+    st_cols[1].altair_chart(fig, use_container_width=True)
 
-    alt_fig = points | timeseries
+    grid_xy = pd.DataFrame(index=grid.index)
+    grid_xy["zone_id"] = grid.zone_id
+    grid_xy["x"] = grid.centroid.geometry.apply(lambda p: p.x)
+    grid_xy["y"] = grid.centroid.geometry.apply(lambda p: p.y)
 
-    return alt_fig
+    data = pd.merge(zones_history, grid_xy, on='zone_id')
+    data = data[data.zone_id.isin(critical_zones)]
 
 
-#alt_fig = create_altair_chart()
-#st.altair_chart(alt_fig, use_container_width=True)
+    # -> The chart below is very cool but heavy
+    # -> Check Altair limitations for complex charts
+
+    @st.experimental_memo
+    def create_altair_chart():
+
+        selector = alt.selection_single(empty='all', fields=['zone_id'])
+
+        base = alt.Chart(data).add_selection(selector)
+
+        points = base.mark_point(filled=True, size=200).encode(
+            x=alt.X('x', scale=alt.Scale(domain=[grid_xy.x.min(), grid_xy.x.max()])),
+            y=alt.Y('y', scale=alt.Scale(domain=[grid_xy.y.min(), grid_xy.y.max()])),
+            color=alt.condition(selector, 'zone_id', alt.value('lightgray'), legend=None),
+        )
+
+        timeseries = base.mark_line().properties(width=500).encode(
+            x=alt.Y('t:T'),
+            y=alt.Y('vehicles_parked', scale=alt.Scale(domain=(0, 30))),
+            color=alt.Color('zone_id', legend=None)
+        ).transform_filter(
+            selector
+        ).interactive()
+
+        alt_fig = points | timeseries
+
+        return alt_fig
+
+
+    #alt_fig = create_altair_chart()
+    #st.altair_chart(alt_fig, use_container_width=True)
+
+else:
+
+    st.success("Congratulazioni! Nessuna zona critica di parcheggio trovata!")

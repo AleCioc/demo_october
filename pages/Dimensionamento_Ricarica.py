@@ -7,7 +7,7 @@ st.set_page_config(layout="wide")
 
 add_logo()
 
-st.header("Dimensionamento flotta")
+st.header("Dimensionamento ricarica")
 
 chosen_simulation = st.selectbox("Seleziona scenario:", options=[
     "charging_dim_ev"
@@ -16,7 +16,7 @@ chosen_simulation = st.selectbox("Seleziona scenario:", options=[
 sim_stats_df = pd.read_csv(
     "results/Roma/multiple_runs/{}/sim_stats.csv".format(chosen_simulation),
     index_col=0
-).rename(columns={"washing": "washing_cost"})
+).rename(columns={"washing_cost": "vehicle_maintainance_cost"})
 
 st.subheader("Risultati completi")
 with st.expander("Clicca per vedere i risultati completi"):
@@ -27,7 +27,6 @@ sim_stats_df.tot_n_charging_poles = sim_stats_df.tot_n_charging_poles.astype(flo
 selected_n_charging_zones = st.selectbox(
     "Seleziona numero di zone con stazioni di ricarica:", sorted(sim_stats_df.n_charging_zones.unique())
 )
-
 
 st.subheader("Domanda insoddisfatta [%]")
 
@@ -99,13 +98,13 @@ st.markdown("#### Costi operativi [€]")
 
 costs_by_n_poles = sim_stats_df.loc[
     sim_stats_df.n_charging_zones == selected_n_charging_zones, [
-        "relocation_cost", "energy_cost", "washing_cost", "tot_n_charging_poles"
+        "relocation_cost", "energy_cost", "vehicle_maintainance_cost", "tot_n_charging_poles"
     ]
 ]
 costs_by_n_poles = pd.melt(
     costs_by_n_poles,
     id_vars="tot_n_charging_poles",
-    value_vars=["relocation_cost", "energy_cost", "washing_cost", "tot_n_charging_poles"]
+    value_vars=["relocation_cost", "energy_cost", "vehicle_maintainance_cost", "tot_n_charging_poles"]
 ).rename(columns={"value": "cost", "variable": "cost_type"})
 
 altair_fig = alt.Chart(costs_by_n_poles).mark_bar(

@@ -15,7 +15,7 @@ chosen_simulation = st.selectbox("Seleziona scenario:", options=[
 sim_stats_df = pd.read_csv(
     "results/Roma/multiple_runs/{}/sim_stats.csv".format(chosen_simulation),
     index_col=0
-).rename(columns={"washing": "washing_cost"})
+).rename(columns={"washing_cost": "vehicle_maintainance_cost"})
 
 st.subheader("Risultati completi")
 with st.expander("Clicca per vedere i risultati completi"):
@@ -128,13 +128,13 @@ st.altair_chart(altair_fig, use_container_width=True)
 st.markdown("#### Costi operativi [€]")
 
 costs_by_n_vehicles = sim_stats_df[
-    ["relocation_cost", "energy_cost", "washing_cost", "n_vehicles_sim"]
+    ["relocation_cost", "energy_cost", "vehicle_maintainance_cost", "n_vehicles_sim"]
 ]
 
 costs_by_n_vehicles = pd.melt(
     costs_by_n_vehicles,
     id_vars="n_vehicles_sim",
-    value_vars=["relocation_cost", "energy_cost", "washing_cost", "n_vehicles_sim"]
+    value_vars=["relocation_cost", "energy_cost", "vehicle_maintainance_cost", "n_vehicles_sim"]
 ).rename(columns={"value": "cost", "variable": "cost_type"})
 
 altair_fig = alt.Chart(costs_by_n_vehicles).mark_bar(

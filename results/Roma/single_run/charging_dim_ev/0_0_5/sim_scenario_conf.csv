@@ -12,7 +12,7 @@ profile_type,single_phase_2
 charging_config_mode,sim_config
 cps_placement_policy,num_parkings
 tot_n_charging_poles,50
-n_charging_zones,10
+n_charging_zones,5
 charging_strategy,reactive
 charging_relocation_strategy,closest_queueing
 queuing,True
