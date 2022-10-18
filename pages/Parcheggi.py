@@ -12,7 +12,16 @@ st.title("Analisi parcheggi")
 
 st.header("Calcolo degli indici")
 
-chosen_sim_scenario = st.selectbox("Seleziona scenario:", ["fleet_dim_fuel", "fleet_dim_ev"])
+chosen_simulation_readable = st.selectbox("Seleziona scenario:", options=[
+    "Dimensionamento con veicoli a benzina", "Dimensionamento con veicoli elettrici"
+])
+
+chosen_sim_scenario = "UNSPECIFIED"
+
+if chosen_simulation_readable == "Dimensionamento con veicoli a benzina":
+    chosen_sim_scenario = "fleet_dim_fuel"
+elif chosen_simulation_readable == "Dimensionamento con veicoli elettrici":
+    chosen_sim_scenario = "fleet_dim_ev"
 
 sim_ids = [f for f in os.listdir("results/Roma/single_run/{}".format(chosen_sim_scenario)) if f != ".DS_Store"]
 sim_ids.sort(key=natural_keys)

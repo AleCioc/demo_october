@@ -5,9 +5,16 @@ st.set_page_config(layout="wide")
 
 st.title("Dimensionamento flotta")
 
-chosen_simulation = st.selectbox("Seleziona scenario:", options=[
-    "fleet_dim_fuel", "fleet_dim_ev"
+chosen_simulation_readable = st.selectbox("Seleziona scenario:", options=[
+    "Dimensionamento con veicoli a benzina", "Dimensionamento con veicoli elettrici"
 ])
+
+chosen_simulation = "UNSPECIFIED"
+
+if chosen_simulation_readable == "Dimensionamento con veicoli a benzina":
+    chosen_simulation = "fleet_dim_fuel"
+elif chosen_simulation_readable == "Dimensionamento con veicoli elettrici":
+    chosen_simulation = "fleet_dim_ev"
 
 sim_stats_df = pd.read_csv(
     "results/Roma/multiple_runs/{}/sim_stats.csv".format(chosen_simulation),

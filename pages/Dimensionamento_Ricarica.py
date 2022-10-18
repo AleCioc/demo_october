@@ -6,9 +6,14 @@ st.set_page_config(layout="wide")
 
 st.title("Dimensionamento ricarica")
 
-chosen_simulation = st.selectbox("Seleziona scenario:", options=[
-    "charging_dim_ev"
+chosen_simulation_readable = st.selectbox("Seleziona scenario:", options=[
+    "Dimensionamento ricarica per veicoli elettrici"
 ])
+
+chosen_simulation = "UNSPECIFIED"
+
+if chosen_simulation_readable == "Dimensionamento ricarica per veicoli elettrici":
+    chosen_simulation = "charging_dim_ev"
 
 sim_stats_df = pd.read_csv(
     "results/Roma/multiple_runs/{}/sim_stats.csv".format(chosen_simulation),
@@ -24,6 +29,8 @@ with st.expander("Clicca per vedere i risultati completi"):
 
 best_config_stats_profit = sim_stats_df.loc[sim_stats_df.profit.idxmax()]
 best_config_stats_unsatisfied = sim_stats_df.loc[sim_stats_df.percentage_unsatisfied.idxmin()]
+best_config_stats_relot = sim_stats_df[sim_stats_df.percentage_satisfied > 70]
+best_config_stats_relot = best_config_stats_relot.loc[best_config_stats_relot.cum_relo_t.idxmin()]
 
 original_fleet_stats = sim_stats_df.loc[sim_stats_df.n_vehicles_sim == 600]
 
@@ -51,7 +58,17 @@ La migliore configurazione in base alla domanda soddisfatta è composta da {} zo
     )
 )
 
-# with st.expander("Clicca per vedere i KPI più importanti"):
+# st.markdown(
+#     """
+#
+# La migliore configurazione in base al tempo di gestione e con domanda soddisfatta > 70%
+#  è composta da {} zone (max) con stazioni di ricarica e {} colonnine totali.
+#
+#     """.format(
+#         best_config_stats_relot.n_charging_zones,
+#         best_config_stats_relot.tot_n_charging_poles
+#     )
+# )
 
 # st_cols = st.columns((1, 1, 1))
 # st_cols[0].metric(

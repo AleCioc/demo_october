@@ -10,7 +10,14 @@ st.title("Stazioni di ricarica")
 
 st.header("Esplora le disposizioni trovate")
 
-chosen_sim_scenario = st.selectbox("Seleziona scenario:", ["charging_dim_ev"])
+chosen_simulation_readable = st.selectbox("Seleziona scenario:", options=[
+    "Dimensionamento ricarica per veicoli elettrici"
+])
+
+chosen_sim_scenario = "UNSPECIFIED"
+
+if chosen_simulation_readable == "Dimensionamento ricarica per veicoli elettrici":
+    chosen_sim_scenario = "charging_dim_ev"
 
 sim_ids = [f for f in os.listdir("results/Roma/single_run/{}".format(chosen_sim_scenario)) if f != ".DS_Store"]
 sim_ids.sort(key=natural_keys)
