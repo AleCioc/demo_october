@@ -8,8 +8,6 @@ st.set_page_config(
     layout="wide"
 )
 
-add_logo()
-
 st.header("Benvenut*!")
 
 st.subheader("Naviga il menu a sinistra per guardare i risultati delle analisi.")
