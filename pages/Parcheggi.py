@@ -8,9 +8,9 @@ warnings.simplefilter("ignore")
 
 st.set_page_config(layout="wide")
 
-add_logo()
+st.title("Analisi parcheggi")
 
-st.header("Analisi parcheggi")
+st.header("Calcolo degli indici")
 
 chosen_sim_scenario = st.selectbox("Seleziona scenario:", ["fleet_dim_fuel", "fleet_dim_ev"])
 
@@ -98,6 +98,8 @@ def plotly_chart_2():
 
 st_cols[0].plotly_chart(plotly_chart_1(), use_container_width=True)
 st_cols[1].plotly_chart(plotly_chart_2(), use_container_width=True)
+
+st.header("Identificazione zone critiche")
 
 if len(critical_zones):
 

@@ -1,13 +1,10 @@
 import streamlit as st
 import pandas as pd
-from utils import add_logo
 import altair as alt
 
 st.set_page_config(layout="wide")
 
-add_logo()
-
-st.header("Dimensionamento ricarica")
+st.title("Dimensionamento ricarica")
 
 chosen_simulation = st.selectbox("Seleziona scenario:", options=[
     "charging_dim_ev"
@@ -18,9 +15,98 @@ sim_stats_df = pd.read_csv(
     index_col=0
 ).rename(columns={"washing_cost": "vehicle_maintainance_cost"})
 
+st.header("Risultati generali delle simulazioni")
+
 st.subheader("Risultati completi")
+
 with st.expander("Clicca per vedere i risultati completi"):
     st.dataframe(sim_stats_df)
+
+best_config_stats_profit = sim_stats_df.loc[sim_stats_df.profit.idxmax()]
+best_config_stats_unsatisfied = sim_stats_df.loc[sim_stats_df.percentage_unsatisfied.idxmin()]
+
+original_fleet_stats = sim_stats_df.loc[sim_stats_df.n_vehicles_sim == 600]
+
+st.subheader("Risultati miglior scenario")
+
+st.markdown(
+    """
+
+La migliore configurazione in base al profitto è composta da {} zone (max) con stazioni di ricarica e {} colonnine totali.
+
+    """.format(
+        best_config_stats_profit.n_charging_zones,
+        best_config_stats_profit.tot_n_charging_poles
+    )
+)
+
+st.markdown(
+    """
+
+La migliore configurazione in base alla domanda soddisfatta è composta da {} zone (max) con stazioni di ricarica e {} colonnine totali.
+
+    """.format(
+        best_config_stats_unsatisfied.n_charging_zones,
+        best_config_stats_unsatisfied.tot_n_charging_poles
+    )
+)
+
+# with st.expander("Clicca per vedere i KPI più importanti"):
+
+# st_cols = st.columns((1, 1, 1))
+# st_cols[0].metric(
+#     "Aumento utilizzo veicoli",
+#     "+ {:.2f} %".format((
+#             ((best_config_stats.avg_vehicle_utilisation) \
+#              - (original_fleet_stats.avg_vehicle_utilisation)) \
+#             / (original_fleet_stats.avg_vehicle_utilisation)
+#     ).values[0] * 100)
+# )
+# st_cols[1].metric(
+#     "Aumento domanda soddisfatta per veicolo",
+#     "+ {:.2f} %".format((
+#             (best_config_stats.percentage_satisfied / best_config_stats.n_vehicles_sim) \
+#             - (original_fleet_stats.percentage_satisfied / 600)
+#     ).values[0] * 100)
+# )
+# if original_fleet_stats.profit.values[0] < 0:
+#     profit_sign = -1
+# else:
+#     profit_sign = 1
+#
+# st_cols[2].metric(
+#     "Aumento profitto",
+#     "+ {:.2f} %".format((
+#             ((best_config_stats.profit) \
+#              - (original_fleet_stats.profit)) \
+#             / (original_fleet_stats.profit * profit_sign)
+#     ).values[0] * 100)
+# )
+# st_cols = st.columns((1, 1, 1))
+# st_cols[0].metric(
+#     "Riduzione CO2 emessa",
+#     "- {:.2f} %".format((
+#             (original_fleet_stats.tot_co2_emissions_kg - best_config_stats.tot_co2_emissions_kg) \
+#             / original_fleet_stats.tot_co2_emissions_kg
+#     ).values[0] * 100)
+# )
+#
+# st_cols[1].metric(
+#     "Riduzione costi veicoli",
+#     "- {:.2f} %".format((
+#             (original_fleet_stats.cars_cost + original_fleet_stats.vehicle_maintainance_cost \
+#              - best_config_stats.cars_cost - best_config_stats.vehicle_maintainance_cost) \
+#             / (original_fleet_stats.cars_cost + original_fleet_stats.vehicle_maintainance_cost)
+#     ).values[0] * 100)
+# )
+# st_cols[2].metric(
+#     "Riduzione veicoli in circolazione",
+#     "- {:.2f} %".format(((600 - best_config_stats.n_vehicles_sim) / 600) * 100)
+# )
+
+st.header("Guarda tutti i grafici")
+
+sim_stats_df.n_vehicles_sim = sim_stats_df.n_vehicles_sim.astype(float)
 
 sim_stats_df.tot_n_charging_poles = sim_stats_df.tot_n_charging_poles.astype(float)
 

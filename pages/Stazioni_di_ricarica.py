@@ -6,9 +6,9 @@ from utils import *
 
 st.set_page_config(layout="wide")
 
-add_logo()
+st.title("Stazioni di ricarica")
 
-st.header("Stazioni di ricarica")
+st.header("Esplora le disposizioni trovate")
 
 chosen_sim_scenario = st.selectbox("Seleziona scenario:", ["charging_dim_ev"])
 
@@ -55,7 +55,37 @@ grid = pd.read_pickle(
 charging_zones = [int(z) for z in n_charging_poles_by_zone.keys()]
 charging_poles_by_zone = {int(z): n_charging_poles_by_zone[z] for z in n_charging_poles_by_zone.keys()}
 
-st.metric("Numero effettivo di zone con stazioni", len(charging_poles_by_zone.keys()))
+sim_stats = sim_stats_df[sim_stats_df.sim_id == chosen_sim_id]
+
+st_cols = st.columns((1, 1, 1))
+st_cols[0].metric(
+    "Numero effettivo di zone", len(charging_poles_by_zone.keys()),
+    help="L'algoritmo di assegnazione zone può decidere di usarne meno del numero fornito"
+)
+st_cols[1].metric(
+    "Domanda insoddisfatta", sim_stats.percentage_unsatisfied.values[0][:5] + " %",
+    help="Percentuale di domanda insoddisfatta complessiva"
+)
+st_cols[2].metric(
+    "Rate medio domanda insoddisfatta per zona", str((grid.unsatisfied_demand_origins / grid.origin_count).mean())[:5],
+    help="Percentuale di domanda insoddisfatta media per zona"
+)
+st_cols = st.columns((1, 1, 1))
+
+st_cols[0].metric(
+    "Tempo di gestione", str(sim_stats.cum_relo_ret_t.astype(float).values[0] / 3600)[:-11] + " ore",
+    help="Tempo necessario agli spostamenti legati alle ricariche"
+)
+
+st_cols[1].metric(
+    "Costi di rilocazione", str(sim_stats.relocation_cost.astype(float).values[0])[:-11] + " €",
+    help="Costi per sostenere gli spostamenti legati alle ricariche"
+)
+
+st_cols[2].metric(
+    "Costi infrastruttura", str(sim_stats.charging_infrastructure_cost.astype(float).values[0])[:-11] + " €",
+    help="Costi mensili per sostenere l'infrastruttura con ammortamento pari a 10 anni"
+)
 
 grid.loc[charging_zones, "poles_count"] = charging_poles_by_zone
 
